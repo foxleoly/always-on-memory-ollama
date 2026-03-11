@@ -45,7 +45,7 @@ class CopilotProvider:
         "gemini-2.5-pro",
     ]
     
-    def __init__(self, model: str = "gpt-4o"):
+    def __init__(self, model: str = "gpt-4o", api_url: str = None):
         if model not in self.SUPPORTED_MODELS:
             raise ValueError(f"Model {model} not supported. Supported models: {', '.join(self.SUPPORTED_MODELS)}")
         
@@ -53,6 +53,9 @@ class CopilotProvider:
         self.token = None
         self.token_expiry = None
         self.client = None
+        
+        # API URL from environment or parameter
+        self.api_url = api_url or os.getenv("COPILOT_API_URL", "https://api.githubcopilot.com")
         
         # Load and exchange token
         self._refresh_token()
@@ -143,7 +146,7 @@ class CopilotProvider:
         self._refresh_token()  # Ensure token is fresh
         
         self.client = openai.OpenAI(
-            base_url="https://api.githubcopilot.com",
+            base_url=self.api_url,
             api_key=self.token
         )
     
@@ -156,7 +159,7 @@ class CopilotProvider:
         # Update client with new token if needed
         if self.client.api_key != self.token:
             self.client = openai.OpenAI(
-                base_url="https://api.githubcopilot.com",
+                base_url=self.api_url,
                 api_key=self.token
             )
     
@@ -171,7 +174,7 @@ class CopilotProvider:
                 # Token might be expired, refresh and retry
                 self._refresh_token()
                 self.client = openai.OpenAI(
-                    base_url="https://api.githubcopilot.com",
+                    base_url=self.api_url,
                     api_key=self.token
                 )
                 

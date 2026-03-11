@@ -369,8 +369,9 @@ class MemoryAgent:
         
         # 根据 PROVIDER 选择客户端
         if provider.lower() == "copilot":
-            log.info(f"🚀 Using GitHub Copilot provider with model: {model}")
-            self.client = CopilotProvider(model=model)
+            copilot_api_url = os.getenv("COPILOT_API_URL", "https://api.githubcopilot.com")
+            log.info(f"🚀 Using GitHub Copilot provider with model: {model}, API URL: {copilot_api_url}")
+            self.client = CopilotProvider(model=model, api_url=copilot_api_url)
         else:
             log.info(f"🦙 Using Ollama provider with model: {model}")
             self.client = OllamaClient(host=OLLAMA_HOST, model=model)
