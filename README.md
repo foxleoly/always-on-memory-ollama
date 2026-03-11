@@ -1,156 +1,240 @@
-# Always-On Memory Agent - Ollama Version
+# Always-On Memory Agent with Ollama
 
-基于 Google 原始项目思路，使用本地 Ollama 模型实现的 always-on 记忆代理。
+**Ollama version based on Google always-on-memory-agent**
 
-## 特性
+---
 
-- ✅ **本地运行** - 使用 Ollama + qwen3.5:9b，零 API 成本
-- ✅ **持续记忆** - 24/7 后台运行，自动处理新信息
-- ✅ **主动整合** - 定期 consolidating，发现记忆间的关联
-- ✅ **智能查询** - 基于记忆合成答案，带引用
-- ✅ **文件监控** - 自动读取 inbox 文件夹中的文本文件
-- ✅ **HTTP API** - RESTful 接口，易于集成
-- ✅ **SQLite 存储** - 轻量级持久化
+## Project Overview
 
-## 快速开始
+This project is an Ollama-based implementation of Google's always-on-memory-agent. It replaces Google Gemini models with locally running Ollama models (qwen3.8b).
 
-### 1. 环境要求
+---
 
-```bash
-# 安装 Ollama
-brew install ollama
+## Core Features
 
-# 启动 Ollama 服务
-ollama serve
+### 1. Memory Ingestion (Ingest)
+- Automatically parses input text
+- Extracts summary, entities, topic tags
+- Evaluates importance
+- Stores structured data to SQLite database
 
-# 拉取模型（如果还没有）
-ollama pull qwen3.5:9b-q4_K_M
-ollama pull nomic-embed-text
+### 2. Memory Consolidation (Consolidate)
+- Periodically scans unconsolidated memories
+- Discovers patterns and associations between memories
+- Generates comprehensive insights
+- Automatically marks consolidated memories
+
+### 3. Memory Query (Query)
+- Answers questions based on stored memories
+- Intelligent information retrieval
+- References memory IDs for traceability
+
+### 4. File Monitoring
+- Monitors `inbox/` folder for new text files
+- Automatically reads and processes new files
+- Supports multiple text formats
+
+### 5. HTTP API
+- RESTful interface for complete CRUD operations
+- Easy integration with other applications
+
+---
+
+## Technology Stack
+
+- **Programming Language:** Python 3.12+
+- **Async Framework:** asyncio
+- **HTTP Framework:** aiohttp
+- **Database:** SQLite3
+- **LLM:** Ollama (via ollama-python)
+- **Configuration:** Environment variables
+
+---
+
+## Project Structure
+
+```
+always-on-memory-ollama/
+├── agent.py              # Main program
+├── test_full.py          # Complete test suite
+├── test_agent.py         # Quick test script
+├── requirements.txt      # Python dependencies
+├── README.md             # This documentation
+├── CONFIG.md             # Configuration optimization guide
+├── inbox/                # File monitoring directory
+├── memory.db             # SQLite database (created at runtime)
+└── venv/                 # Python virtual environment
 ```
 
-### 2. 安装依赖
+---
+
+## Quick Start
+
+### Install Dependencies
 
 ```bash
 cd /Users/foxleoly/workspace/project/always-on-memory-ollama
-
-# 创建虚拟环境
-python3 -m venv venv
-source venv/bin/activate
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 3. 启动 Agent
+### Install Ollama
+
+```bash
+# macOS
+brew install ollama
+
+# Pull model
+ollama pull qwen3:8b
+
+# Start service
+ollama serve
+```
+
+### Run Tests
+
+```bash
+# Make sure Ollama service is running
+curl http://localhost:11434/api/tags
+
+# Run complete test suite
+python test_full.py
+```
+
+### Start Agent
 
 ```bash
 source venv/bin/activate
-python agent.py
+python agent.py --port 8888 --consolidate-every 30
 ```
 
-### 4. 测试
+---
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/status` | GET | Memory statistics |
+| `/memories` | GET | List all memories |
+| `/ingest` | POST | Ingest new memory `{"text": "...", "source": "..."}` |
+| `/query?q=...` | GET | Query memories |
+| `/consolidate` | POST | Manually trigger consolidation |
+| `/delete` | POST | Delete memory `{"memory_id": 1}` |
+| `/clear` | POST | Clear all memories |
+
+### Usage Examples
 
 ```bash
-# 新终端
-source venv/bin/activate
-python test_agent.py
-```
-
-## API 端点
-
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/status` | GET | 记忆统计 |
-| `/memories` | GET | 列出所有记忆 |
-| `/ingest` | POST | 录入新记忆 `{"text": "...", "source": "..."}` |
-| `/query?q=...` | GET | 查询记忆 |
-| `/consolidate` | POST | 手动触发整合 |
-| `/delete` | POST | 删除记忆 `{"memory_id": 1}` |
-| `/clear` | POST | 清空所有记忆 |
-
-### 使用示例
-
-```bash
-# 录入记忆
+# Ingest memory
 curl -X POST http://localhost:8888/ingest \
   -H "Content-Type: application/json" \
-  -d '{"text": "OpenClaw 是一个 AI 代理框架", "source": "test"}'
+  -d '{"text": "OpenClaw is an AI agent framework", "source": "test"}'
 
-# 查询
-curl "http://localhost:8888/query?q=OpenClaw 是什么"
+# Query
+curl "http://localhost:8888/query?q=What is OpenClaw"
 
-# 查看状态
+# Check status
 curl http://localhost:8888/status
 
-# 列出记忆
+# List memories
 curl http://localhost:8888/memories
 ```
 
-## 文件监控
+---
 
-将文本文件放入 `./inbox/` 文件夹，Agent 会自动读取并录入：
+## File Monitoring
+
+Drop text files into `./inbox/` folder, Agent will automatically read and ingest them:
 
 ```bash
-# 支持的文件类型
-echo "重要信息" > inbox/notes.txt
+# Supported file types
+echo "Important info" > inbox/notes.txt
 cp meeting-notes.md inbox/
 cp data.json inbox/
 ```
 
-## 配置
+---
 
-通过环境变量配置：
+## Configuration
+
+Configure via environment variables:
 
 ```bash
-export MODEL="qwen3.5:9b"           # 主模型
-export EMBED_MODEL="nomic-embed-text"  # 嵌入模型
-export MEMORY_DB="memory.db"        # 数据库路径
-export OLLAMA_HOST="http://localhost:11434"  # Ollama 地址
+export MODEL="qwen3:8b"              # Main model
+export EMBED_MODEL="nomic-embed-text" # Embedding model
+export MEMORY_DB="memory.db"          # Database path
+export OLLAMA_HOST="http://localhost:11434"  # Ollama address
 ```
 
-命令行参数：
+Command line arguments:
 
 ```bash
 python agent.py --watch ./inbox --port 8888 --consolidate-every 30
 ```
 
-## 项目结构
+---
 
-```
-always-on-memory-ollama/
-├── agent.py           # 主程序
-├── test_agent.py      # 测试脚本
-├── requirements.txt   # Python 依赖
-├── venv/              # 虚拟环境
-├── inbox/             # 文件监控目录
-├── memory.db          # SQLite 数据库（运行时创建）
-└── README.md          # 本文档
-```
+## Comparison with Original Project
 
-## 与原始项目对比
+| Feature | Google Original | Ollama Version |
+|---------|----------------|----------------|
+| Model | Gemini 3.1 Flash-Lite | qwen3.8b (local) |
+| Framework | Google ADK | Custom implementation |
+| Multi-modal | ✅ Image/Audio/Video | ❌ Text only |
+| Cost | Per token | Free |
+| Privacy | Data sent to cloud | Local running |
 
-| 特性 | Google 原版 | Ollama 版本 |
-|------|------------|------------|
-| 模型 | Gemini 3.1 Flash-Lite | qwen3.5:9b (本地) |
-| 框架 | Google ADK | 自定义实现 |
-| 多模态 | ✅ 图像/音频/视频 | ❌ 仅文本 |
-| 成本 | 按 token 收费 | 免费 |
-| 隐私 | 数据出网 | 本地运行 |
+---
 
-## 开发笔记
+## Known Limitations
 
-- 使用 `qwen3.5:9b` 模型，需要约 8GB RAM
-- 整合间隔默认 30 分钟，可根据需要调整
-- 文件监控每 5 秒轮询一次
-- 单个文件最大 10KB（避免过长文本）
+1. **Ollama Response Latency**
+   - First load takes 10-30 seconds
+   - Inference speed ~5-15 seconds/request
+   - Suggest using faster models (e.g., qwen3:8b-q4_K_M)
 
-## 参考资料
+2. **Local Running Requires Memory**
+   - qwen3.5:9b-q4_K_M needs ~8GB RAM
+   - qwen3:8b needs ~5GB RAM
+   - Suggest periodic cleanup of unused memories
 
-1. **原始项目** - Google always-on-memory-agent  
+3. **Async Performance**
+   - HTTP server uses async processing
+   - But LLM calling is synchronous (ollama-python limitation)
+   - May become performance bottleneck
+
+---
+
+## Future Improvements
+
+1. **More Model Support**
+   - Add Bailian, OpenAI API support
+   - Implement model switching functionality
+
+2. **Performance Optimization**
+   - Use async LLM calling
+   - Add caching mechanism
+   - Implement streaming responses
+
+3. **Feature Enhancements**
+   - Add vector search (embedding)
+   - Support multi-modal (image, audio, video)
+
+---
+
+## References
+
+1. **Google always-on-memory-agent**  
    https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent
 
-2. **Ollama** - 本地 LLM 运行  
+2. **Ollama Python Client**  
+   https://github.com/ollama/ollama-python
+
+3. **SQLite Documentation**  
+   https://docs.python.org/3/library/sqlite3.html
+
+4. **Ollama**  
    https://ollama.ai
 
-3. **qwen3.5 模型**  
-   https://ollama.ai/library/qwen3.5
+---
+
+*Last Updated: 2026-03-11*

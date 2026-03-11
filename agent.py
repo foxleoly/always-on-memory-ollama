@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Always-On Memory Agent - Ollama Version
+Always-On Memory Agent - Ollama/Copilot Version
 
 A lightweight background agent that continuously processes, consolidates, and serves memory.
-Runs 24/7 with local Ollama models.
+Runs 24/7 with local Ollama models or GitHub Copilot models.
 
 Usage:
     python agent.py                          # watch ./inbox, serve on :8888
@@ -30,6 +30,8 @@ from pathlib import Path
 
 import ollama
 from aiohttp import web
+
+from copilot_provider import CopilotProvider
 
 # ─── Config ────────────────────────────────────────────────────
 
