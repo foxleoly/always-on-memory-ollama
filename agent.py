@@ -33,7 +33,7 @@ from aiohttp import web
 
 # ─── Config ────────────────────────────────────────────────────
 
-MODEL = os.getenv("MODEL", "qwen3.5:9b-q4_K_M")
+MODEL = os.getenv("MODEL", "qwen3:8b")  # 优化：使用 8b 模型，内存占用从 8GB 降到 5GB
 EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
 DB_PATH = os.getenv("MEMORY_DB", "memory.db")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -405,7 +405,10 @@ class MemoryAgent:
         ])
         
         prompt = build_consolidate_prompt(memories_list)
-        result = await self.client.generate_json(prompt)
+        result = await self.client.generate_json(
+            "你是一个 JSON 格式化的助手。只输出 JSON，不要其他内容。",
+            prompt
+        )
         
         if "error" in result:
             log.error(f"Consolidate parse error: {result}")
@@ -531,8 +534,12 @@ def build_http(agent: MemoryAgent, watch_path: str = "./inbox"):
         return web.json_response({"status": "ingested", "response": result})
 
     async def handle_consolidate(request: web.Request):
-        result = await agent.consolidate()
-        return web.json_response({"status": "done", "response": result})
+        try:
+            result = await agent.consolidate()
+            return web.json_response({"status": "success", "response": result})
+        except Exception as e:
+            log.error(f"Consolidate error: {e}")
+            return web.json_response({"status": "error", "error": str(e)}, status=500)
 
     async def handle_status(request: web.Request):
         stats = await agent.status()
@@ -610,7 +617,7 @@ async def main_async(args):
 def main():
     parser = argparse.ArgumentParser(description="Agent Memory Layer - Ollama Version")
     parser.add_argument("--watch", default="./inbox", help="Folder to watch (default: ./inbox)")
-    parser.add_argument("--port", type=int, default=8888, help="HTTP API port (default: 8888)")
+    parser.add_argument("--port", type=int, default=8893, help="HTTP API port (default: 8893)")
     parser.add_argument("--consolidate-every", type=int, default=30, help="Consolidation interval (default: 30m)")
     args = parser.parse_args()
 

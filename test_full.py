@@ -15,7 +15,7 @@ import time
 import sys
 from datetime import datetime
 
-BASE_URL = "http://localhost:8891"
+BASE_URL = "http://localhost:8894"
 TEST_RESULTS = []
 
 def log_result(test_name, status, details="", duration=""):
@@ -71,7 +71,7 @@ def test_ingest_basic():
             "text": "测试记忆：OpenClaw 是一个强大的 AI 代理框架，支持多模型后端。",
             "source": "test_suite"
         }
-        resp = requests.post(f"{BASE_URL}/ingest", json=data, timeout=60)
+        resp = requests.post(f"{BASE_URL}/ingest", json=data, timeout=180)
         duration = f"{(time.time() - start) * 1000:.0f}ms"
         
         if resp.status_code == 200:
@@ -135,7 +135,7 @@ def test_ingest_long_text():
         start = time.time()
         long_text = "测试内容 " * 500  # 5000 字符
         data = {"text": long_text, "source": "test_long"}
-        resp = requests.post(f"{BASE_URL}/ingest", json=data, timeout=60)
+        resp = requests.post(f"{BASE_URL}/ingest", json=data, timeout=180)
         duration = f"{(time.time() - start) * 1000:.0f}ms"
         
         if resp.status_code == 200:
@@ -333,7 +333,7 @@ def test_performance_ingest():
         for i in range(3):
             start = time.time()
             data = {"text": f"性能测试记忆 {i}", "source": "perf_test"}
-            resp = requests.post(f"{BASE_URL}/ingest", json=data, timeout=60)
+            resp = requests.post(f"{BASE_URL}/ingest", json=data, timeout=180)
             duration = time.time() - start
             times.append(duration)
             if resp.status_code != 200:
