@@ -35,6 +35,7 @@ from copilot_provider import CopilotProvider
 
 # ─── Config ────────────────────────────────────────────────────
 
+PROVIDER = os.getenv("PROVIDER", "ollama")  # 模型提供者：ollama 或 copilot
 MODEL = os.getenv("MODEL", "qwen3:8b")  # 优化：使用 8b 模型，内存占用从 8GB 降到 5GB
 EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
 DB_PATH = os.getenv("MEMORY_DB", "memory.db")
@@ -362,9 +363,17 @@ def build_query_prompt(memories_list: str, consolidations_list: str, question: s
 # ─── Memory Agent ──────────────────────────────────────────────
 
 class MemoryAgent:
-    def __init__(self, model=MODEL):
+    def __init__(self, model=MODEL, provider=PROVIDER):
         self.model = model
-        self.client = OllamaClient(host=OLLAMA_HOST, model=model)
+        self.provider = provider
+        
+        # 根据 PROVIDER 选择客户端
+        if provider.lower() == "copilot":
+            log.info(f"🚀 Using GitHub Copilot provider with model: {model}")
+            self.client = CopilotProvider(model=model)
+        else:
+            log.info(f"🦙 Using Ollama provider with model: {model}")
+            self.client = OllamaClient(host=OLLAMA_HOST, model=model)
     
     async def ingest(self, text: str, source: str = "") -> dict:
         """Ingest new text and store as memory."""
